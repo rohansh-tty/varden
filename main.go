@@ -101,7 +101,32 @@ func main() {
 		},
 	}
 
-	rootCmd.AddCommand(generateCmd, getCmd)
+	var updateCmd = &cobra.Command{
+		Use:   "update [app_name] [password]",
+		Short: "Update a password",
+		Args:  cobra.ExactArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+			_, err := updatePassword(args[0], args[1])
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("Updated Password for %s:\n", args[1])
+		},
+	}
+	var deleteCmd = &cobra.Command{
+		Use:   "delete [app_name]",
+		Short: "Delete a password",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			_, err := deletePassword(args[0])
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("Deleted Password for %s:\n", args[0])
+		},
+	}
+
+	rootCmd.AddCommand(generateCmd, getCmd, updateCmd, deleteCmd)
 
 	connectDB()
 	defer db.Close()
@@ -179,4 +204,31 @@ func getPassword(appName string) (string, error) {
 	}
 
 	return password, nil
+}
+
+func deletePassword(appName string) (string, error) {
+	err := db.QueryRow("DELETE password FROM passwords WHERE app_name = $1", appName)
+	if err != nil {
+		log.Fatalf("error retrieving password: %v", err)
+		return "", fmt.Errorf("error decrypting password: %v", err)
+
+	}
+	return "", nil
+}
+
+func updatePassword(appName string, password string) (string, error) {
+	encryptedPassword, err := encryptPassword(password)
+	if err != nil {
+		err := fmt.Sprintf("error encrypting password: %v", err)
+		return "", fmt.Errorf("error encrypting password: %v", err)
+
+	}
+	updateErr := db.QueryRow("UPDATE passwords SET password=$1 WHERE app_name=$2", encryptedPassword, appName)
+	if updateErr != nil {
+		updateErrString := fmt.Sprintf("error updating password: %v", err)
+		return "", fmt.Errorf("error updating password: %v", updateErrString)
+
+	}
+	return "", nil
+
 }
