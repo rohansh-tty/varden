@@ -78,7 +78,7 @@ func dumpPasswordsToZip(db *sql.DB, filename string) error {
 	return nil
 }
 
-func restorePasswordsToZip(db *sql.DB, filename string) error {
+func restorePasswordsFromZip(db *sql.DB, filename string) error {
 	// open zip file
 	reader, err := zip.OpenReader(filename)
 	if err != nil {
@@ -281,7 +281,7 @@ func main() {
 		Short: "Restore Database from zip",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			err := restorePasswordsToZip(db, args[0])
+			err := restorePasswordsFromZip(db, args[0])
 			if err != nil {
 				log.Fatal(err)
 			}
